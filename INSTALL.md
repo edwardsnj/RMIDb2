@@ -4,7 +4,7 @@
 Required: Python 2.7 with numpy and scipy. A prepackaged distribution, such as
 Enthought Python can simplify this process significantly. 
 
-1. Unpack or checkout the rmidb2 distribution ($RMIDB2_HOME)
+1. Unpack or checkout the rmidb2 distribution and set `$RMIDB2_HOME`.
 
 		unzip rmidb2.zip
 		cd rmidb2
@@ -47,7 +47,7 @@ Enthought Python can simplify this process significantly.
 
 # Elastic Beanstalk (AWS) Installation
 
-Requires: Local installation as above. AWS credentials in $HOME/.aws/config.
+Requires: Local installation as above. AWS credentials in `$HOME/.aws/config`.
 
 1. Install Elastic Beanstalk command-line interface.
 
@@ -55,8 +55,8 @@ Requires: Local installation as above. AWS credentials in $HOME/.aws/config.
 		.python/bin/pip install awsebcli
 		ln -s .python/bin/eb
 
-2. Configure the EB parameters. The SMTPUSER, SMTPPASS, S3BUCKET
-parameters can be left as is. Change the NAME paramter to something
+2. Configure the EB parameters. The `SMTPUSER`, `SMTPPASS`, `S3BUCKET`
+parameters can be left as is. Change the `NAME` paramter to something
 reasonable.
 
 		cd $RMIDB2_HOME
@@ -74,7 +74,7 @@ reasonable.
 		cd $RMIDB2_HOME
 		./eb/build.sh
 
-5. Start the RMIDb2 Elastic Beanstalk instance. Instance will be at $NAME.elasticbeanstalk.com.
+5. Start the RMIDb2 Elastic Beanstalk instance. Instance will be at `$NAME.elasticbeanstalk.com`.
 
 		cd $RMIDB2_HOME
 		./eb/start.sh

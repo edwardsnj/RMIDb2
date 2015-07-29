@@ -7,4 +7,4 @@ Beanstalk. Written using Python web-stack TurboGears (version 1.5.1). In
 addition to TurboGears dependencies, RMIDb requires the TurboGears
 registration module, BioPython, numpy, and scipy.
 
-See [INSTALL.md](INSTALL.md) for instructions for local or AWS installation. 
+See [INSTALL](INSTALL.md) for instructions for local or AWS installation. 
