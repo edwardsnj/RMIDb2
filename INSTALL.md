@@ -74,7 +74,7 @@ reasonable.
 		cd $RMIDB2_HOME
 		./eb/build.sh
 
-5. Start the RMIDb2 Elastic Beanstalk instance.
+5. Start the RMIDb2 Elastic Beanstalk instance. Instance will be at $NAME.elasticbeanstalk.com.
 
 		cd $RMIDB2_HOME
 		./eb/start.sh
@@ -87,5 +87,5 @@ reasonable.
 6. To stop the RMIDb Elastic Beanstalk instance:
 
 		cd $RMIDB2_HOME
-		./eb/stop
+		./eb/stop.sh
 
