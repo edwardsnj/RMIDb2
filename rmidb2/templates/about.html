@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<xi:include href="master.html" />
+
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
+    <title>${siteTitle}</title>
+</head>
+<body>
+    <div class="page-header">
+        <h2>Abstract</h2>
+    </div>
+    <h4>
+    
+Matrix-Assisted Laser Desorption/Ionization Time-of-Flight (MALDI-TOF)
+is a soft ionization technique used in mass spectrometry to generate
+protein mass spectra of unknown microorganisms. By comparing the peaks
+observed in the spectrum and the sequences of microorganism ribosomal
+proteins, it provides a quick and inexpensive method for microorganism
+identification. Previous studies proposed a match scoring algorithm based
+on counting the number of spectral peaks matching protein sequences of
+microorganisms from a reference database and demonstrate the effectiveness
+and robustness of this tecnique with E.coli and B. subtilis. In our
+study, we addressed the lack of a public available tool implementing this
+algorithm and present a web-based user interface for rapid microorganism
+identification.
+<p/>
+The core algorithm was implemented in Python based on FASTA files
+downloaded from UniProt and executed it on Linux command line. A
+web-based user interface was then implemented, using Turbogears1.5,
+a pythonic framework for web development. A number of features were
+added to the web-application to improve its utility, including user
+accounts and previously executed identification queries. Lastly, the
+scoring algorithm was integrated with the web-based user interface and
+the user-interface configured to execute queued queries asynchronously.
+<p/>
+The web-application was tested with <A href="/static/data/ac034069bsi20030422_015016.xls">MALDI spectra of known
+microorganisms</A> from Pineda et al. (2003), successfully demonstrating
+a public facing multi-user web-application for rapid microorganism
+identification.
+    </h4>
+
+    <div class="page-header">
+        <h2>References</h2>
+    </div>
+    <ul>
+        <li py:for="p in ref"><h4>${p.rsplit(None,1)[0]} <A href="http://dx.doi.org/${p.rsplit(None,1)[1].split(':',1)[1]}">${p.rsplit(None,1)[1]}</A></h4></li>
+    </ul>
+
+</body>
+</html>

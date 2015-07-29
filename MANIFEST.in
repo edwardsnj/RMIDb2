@@ -1,0 +1,5 @@
+include start-rmidb2.py
+include *.cfg
+include rmidb2/config/*.cfg
+recursive-include rmidb2/templates *.html
+recursive-include rmidb2/static *

@@ -55,3 +55,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# no secrets!
+eb/config.sh

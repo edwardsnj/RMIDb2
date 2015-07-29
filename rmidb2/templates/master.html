@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude" py:strip="">
+
+<head py:match="head" py:attrs="select('@*')">
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
+    <meta py:replace="select('*')" />
+    <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="${tg.url('/static/css/style.css')}" />
+</head>
+
+<body py:match="body" py:attrs="select('@*')">
+    <!-- Navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="${tg.url('/')}">
+                    <span class="fa fa-flask" id="appLogo"></span>
+                    <strong>Rapid Microorganism Identification Database</strong>
+                </a>
+            </div>
+            <div>
+                <ul class="nav navbar-nav">
+                    <li py:if="not tg.identity.anonymous"><a href="${tg.url('/search')}">Search</a></li>
+                    <li><a href="${tg.url('/about')}">About</a></li>
+                    <li><a href="${tg.url('/contact')}">Contact</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <py:choose>
+                        <py:when test="tg.identity.anonymous">
+                            <li><a href="/registration/new"><span class="fa fa-user"></span> Sign Up</a></li>
+                            <li><a href="/login"><span class="fa fa-sign-in"></span> Sign In</a></li>
+                            <li><a href="/guest"><span class="fa fa-sign-in"></span> Guest</a></li>
+                        </py:when>
+                        <py:otherwise>
+                            <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                                    role="button" aria-expanded="false">
+                                <span class="fa fa-user"></span>
+                                    ${tg.identity.user.display_name or tg.identity.user.user_name}
+                                <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li><a py:if="tg.identity.user.is_admin()" href="/catwalk/">
+                                        <span class="fa fa-lock"></span> Database</a>
+                                    </li>
+                                    <li><a py:if="not tg.identity.user.is_guest()" href="/registration/edit"><span class="fa fa-pencil"></span> Profile</a></li>
+                                    <li><a href="/logout"><span class="fa fa-sign-out"></span> Sign Out</a></li>
+                                </ul>
+                            </li>
+                        </py:otherwise>
+                    </py:choose>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- Content -->
+    <div class="container">
+        <div id="status_block" class="flash"
+            py:if="value_of('tg_flash', None)" py:content="tg_flash"></div>
+        <div py:replace="select('*|text()')"/>
+    </div>
+    <!-- Footer -->
+    <nav class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container-fluid">
+            <h5 class="text-center">All rights reserved 2014-2015. Developed by Mingda Jin and Nathan Edwards</h5>
+        </div>
+    </nav>
+
+</body>
+
+</html>

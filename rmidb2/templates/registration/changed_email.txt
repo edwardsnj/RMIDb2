@@ -1,0 +1,9 @@
+You recently changed your email address for the Rapid Microorganism
+Identification Database (http://www.RMIDb.org) from the Edwards Lab at Georgetown University
+(http://edwardslab.bmcb.georgetown.edu). In order to complete this change,
+please open the following address in your web browser:
+
+%(validation_url)s
+
+Once you have visited this address, your email change will be complete.
+

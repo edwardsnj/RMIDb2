@@ -1,0 +1,8 @@
+NAME="rmidb2-test"
+DOMAIN="rmidb2-test.elasticbeanstalk.com"
+MAILDIR="/etc/mail"
+SMTPHOST="email-smtp.us-east-1.amazonaws.com"
+SMTPUSER=""
+SMTPPASS=""
+S3BUCKET=""
+EB="/tools/EPD/bin/eb"

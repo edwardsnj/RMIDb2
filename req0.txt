@@ -1,0 +1,4 @@
+http://peak.telecommunity.com/snapshots/BytecodeAssembler-0.6-r2646.tar.gz
+http://peak.telecommunity.com/snapshots/PEAK-Rules-0.5a1.dev-r2713.tar.gz
+https://pypi.python.org/packages/source/S/SQLObject/SQLObject-3.0.0a1dev-20150327.tar.gz
+TurboGears==1.5.1
