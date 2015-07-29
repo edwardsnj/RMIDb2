@@ -1,4 +1,4 @@
-# rmidb
+# rmidb2
 Rapid Microorganism Identification Database
 
 Code for the Rapid Microorganism Identification Database (www.RMIDb.org)
