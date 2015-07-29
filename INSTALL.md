@@ -33,7 +33,7 @@ Enthought Python can simplify this process significantly.
 5. Reinstate the .egg-info directory
 
 		cd $RMIDB2_HOME
-		./python setup.py egg-info
+		./python setup.py install_egg_info
 
 6. Initialize the SQLite3 database.
 
