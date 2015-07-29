@@ -30,12 +30,62 @@ Enthought Python can simplify this process significantly.
 		.python/bin/pip install -r req0.txt
 		.python/bin/pip install -r req1.txt
 
-5. Initialize the SQLite3 database.
+5. Reinstate the .egg-info directory
+
+		cd $RMIDB2_HOME
+		./python setup.py egg-info
+
+6. Initialize the SQLite3 database.
 
 		cd $RMIDB2_HOME
 		./python initdb.py
 
-6. Start the RMIDb on localhost:8080.
+7. Start the RMIDb on localhost:8080.
 
 		cd $RMIDB2_HOME
 		./python start-rmidb2.py
+
+# Elastic Beanstalk (AWS) Installation
+
+Requires: Local installation as above. AWS credentials in $HOME/.aws/config.
+
+1. Install Elastic Beanstalk command-line interface.
+
+		cd $RMIDB2_HOME
+		.python/bin/pip install awsebcli
+		ln -s .python/bin/eb
+
+2. Configure the EB parameters. The SMTPUSER, SMTPPASS, S3BUCKET
+parameters can be left as is. Change the NAME paramter to something
+reasonable.
+
+		cd $RMIDB2_HOME
+		cp eb/config.empty.sh eb/config.sh
+		vi eb/config.sh
+
+3. Initialize the eb directory for Elastic Beanstalk. Choose the Python
+2.7 container and select the appropriate ssh key.
+
+		cd $RMIDB2_HOME
+		(cd eb; ./init.sh)
+
+4. Build the web-application for Elastic Beanstalk.
+
+		cd $RMIDB2_HOME
+		./eb/build.sh
+
+5. Start the RMIDb2 Elastic Beanstalk instance.
+
+		cd $RMIDB2_HOME
+		./eb/start.sh
+
+6. To update the RMIDb application without stopping the instance:
+
+		cd $RMIDB2_HOME
+		./eb/deploy.sh
+
+6. To stop the RMIDb Elastic Beanstalk instance:
+
+		cd $RMIDB2_HOME
+		./eb/stop
+
