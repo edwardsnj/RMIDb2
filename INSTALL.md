@@ -10,7 +10,7 @@ Enthought Python can simplify this process significantly.
 		unzip rmidb2-master.zip
 		cd rmidb2-master
 
-or
+	or
 
 		git clone https://github.com/edwardsnj/rmidb2.git
 		cd rmidb2
@@ -19,7 +19,7 @@ or
 
 		export RMIDB2_HOME=`pwd`
 
-or (csh derivatives)
+	or (csh derivatives)
 
 		setenv RMIDB2_HOME `pwd`
 
