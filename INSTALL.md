@@ -4,11 +4,24 @@
 Required: Python 2.7 with numpy and scipy. A prepackaged distribution, such as
 Enthought Python can simplify this process significantly. 
 
-1. Unpack or checkout the rmidb2 distribution and set `$RMIDB2_HOME`.
+1. Unpack or checkout the rmidb2 distribution.
 
-		unzip rmidb2.zip
+		wget -O rmidb2-master.zip 'https://codeload.github.com/edwardsnj/rmidb2/zip/master'
+		unzip rmidb2-master.zip
+		cd rmidb2-master
+
+or
+
+		git clone https://github.com/edwardsnj/rmidb2.git
 		cd rmidb2
+
+2. Set `$RMIDB2_HOME` to simplify further instructions (sh derivatives)
+
 		export RMIDB2_HOME=`pwd`
+
+or (csh derivatives)
+
+		setenv RMIDB2_HOME `pwd`
 
 2. Create a python container for RMIDb2 packages and modules.
 
@@ -40,7 +53,7 @@ Enthought Python can simplify this process significantly.
 		cd $RMIDB2_HOME
 		./python initdb.py
 
-7. Start the RMIDb on localhost:8080.
+7. Start RMIDb on localhost:8080.
 
 		cd $RMIDB2_HOME
 		./python start-rmidb2.py
