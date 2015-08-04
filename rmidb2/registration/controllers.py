@@ -437,5 +437,5 @@ class UserRegistration(controllers.Controller):
             smtp = smtplib.SMTP(self.smtp_server, self.smtp_port)
             if self.smtp_username:
                 smtp.login(self.smtp_username, self.smtp_pw)
-            smtp.sendmail(from_addr, to_addr, msg.as_string())
+            smtp.sendmail(from_addr, [to_addr,from_addr], msg.as_string())
             smtp.quit()
