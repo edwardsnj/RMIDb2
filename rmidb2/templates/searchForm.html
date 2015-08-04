@@ -33,7 +33,7 @@
                                 <a href="${tg.url('/search', dict(title=each.title, query=each.query, maxMass=each.max_mass,minMass=each.min_mass, massTolerance=each.mass_tolerance, specMode=each.spec_mode, database=each.database))}">
                                         ${each.title}</a>
                             </td>
-                            <td>${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
+                            <td width="150px">${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -45,7 +45,7 @@
                                 <a href="${tg.url('/search', dict(title=each.title, query=each.query, maxMass=each.max_mass,minMass=each.min_mass, massTolerance=each.mass_tolerance, specMode=each.spec_mode, database=each.database))}">
                                         ${each.title}</a>
                             </td>
-                            <td>${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
+                            <td width="150px">${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
                         </tr>
                     </tbody>
                 </table>
