@@ -19,14 +19,21 @@ from sqlobject.inheritance import InheritableSQLObject
 # (see http://www.sqlobject.org/SQLObject.html#column-types for more)
 from sqlobject import StringCol, UnicodeCol, IntCol, DateTimeCol, FloatCol, ForeignKey, MultipleJoin
 from sqlobject import DatabaseIndex
+from sqlobject.sqlbuilder import *
 from sqlobject.dberrors import *
 from turbogears import identity
 import secpwhash 
+from datetime import timedelta, datetime
+from operator import itemgetter
 
 __connection__ = hub = PackageHub('rmidb2')
 
 
 # your data model
+
+def now():
+    return DateTimeCol.now()
+
 QUEUED = 'Queued'
 RUNNING = 'Running'
 ERROR = 'Error'
@@ -62,6 +69,7 @@ class BiomarkerMatch(SQLObject):
     bmmz = FloatCol()
     biomarker = ForeignKey("Biomarker",cascade=True)
     delta = FloatCol()
+    mods = StringCol()
     index1 = DatabaseIndex('result')
 
 class Biomarker(SQLObject):
@@ -120,6 +128,26 @@ class Visit(SQLObject):
                           alternateMethodName='by_visit_key')
     created = DateTimeCol(default=datetime.now)
     expiry = DateTimeCol()
+
+    @staticmethod
+    def expunge(age=timedelta(days=1),max=1000,connection=None):
+        vq = Visit.q
+	if not connection:
+            connection = hub.getConnection()
+        rows = connection.queryAll(connection.sqlrepr(
+            Select([vq.visit_key],where=(vq.expiry<now()-age),limit=max)))
+        for vk in map(itemgetter(0),rows):
+            try:
+                v = Visit.selectBy(visit_key=vk,connection=connection)[0]
+                v.destroySelf()
+            except:
+                pass
+            try:
+                vi = VisitIdentity.selectBy(visit_key=vk,connection=connection)[0]
+                vi.destroySelf()
+            except IndexError:
+                pass
+        return
 
     @classmethod
     def lookup_visit(cls, visit_key):
@@ -313,10 +341,24 @@ def create_tables(drop_all=False):
     print "All database tables defined in model created."
 
 def create_default_users():
+    alter_database()
     create_admin()
     create_guest()
     create_groups()
-    create_guest_example()
+    create_admin_example()
+
+def alter_database():
+    # To add the mods column to the BiomarkerMatch table...
+    hub.begin()
+    BiomarkerMatch.sqlmeta.delColumn('mods',changeSchema=False)
+    hub.commit()
+
+    hub.begin()
+    try:
+        BiomarkerMatch.sqlmeta.addColumn(StringCol('mods'),changeSchema=True)
+    except OperationalError:
+	pass
+    hub.commit()
 
 def create_groups():
     hub.begin()
@@ -368,9 +410,9 @@ def create_guest():
         u.addGroup(g)
     hub.commit()
 
-def create_guest_example():
+def create_admin_example():
     if SearchList.select().count() == 0:
-        s = SearchList(title="Example: B. subtilis, Positive mode (Pineda et al., 2003)", min_mass=4000.0, max_mass=15000.0, query="4272.29\t4306.49\t4344.59\t4420.69\t4604.99\t4734.79\t4943.49\t5002.39\t5225.09\t5253.99\t5291.19\t5571.79\t5900.39\t6506.69\t6596.59\t6637.49\t6676.99\t6697.19\t7112.89\t7424.59\t7712.79\t8834.89\t9468.79\t10444.19", mass_tolerance=3.0, spec_mode='Positive', database="Ribosomal Proteins in Bacteria: Reviewed", user=User.by_user_name('guest'))
+        s = SearchList(title="Example: B. subtilis, Positive mode (Pineda et al., 2003)", min_mass="", max_mass="", query="4272.29\t4306.49\t4344.59\t4420.69\t4604.99\t4734.79\t4943.49\t5002.39\t5225.09\t5253.99\t5291.19\t5571.79\t5900.39\t6506.69\t6596.59\t6637.49\t6676.99\t6697.19\t7112.89\t7424.59\t7712.79\t8834.89\t9468.79\t10444.19", mass_tolerance=3.0, spec_mode='Positive', database="Ribosomal Proteins in Bacteria: Reviewed", user=User.by_user_name('admin'))
         from async import MicroorganismIdentification
         MicroorganismIdentification()
 

@@ -93,6 +93,17 @@ class UniqueUsername(validators.FancyValidator):
             raise validators.Invalid(self.message('notUnique', state), value, state)
         return value
 
+class DeleteableUsername(validators.FancyValidator):
+    "Validator to confirm that a given user_name can be deleted."
+    messages = {'notDeleteable': 'That user name cannot be deleted.'}
+    
+    def _to_python(self, value, state):
+        if register_model.user_name_is_unique(value):
+            raise validators.Invalid(self.message('notDeleteable', state), value, state)
+	elif value.strip() in ('admin','guest'):
+	    raise validators.Invalid(self.message('notDeleteable', state), value, state)
+        return value
+
 class UniqueEmail(validators.FancyValidator):
     "Validator to confirm a given email address is unique."
     messages = {'notUnique': 'That email address is registered with an existing user.'}
@@ -145,18 +156,15 @@ class ExistingUserSchema(validators.Schema):
     
 class RegTableForm(widgets.TableForm):
     template = 'rmidb2.templates.registration.tabletemplate'
-    
+
 lost_password_form = RegTableForm( fields = [
                                             widgets.TextField('email_or_username',
                                             label=_('User Name or Email Address'),
                                             validator=validators.UnicodeString(not_empty=True, max=255)) ]
                                         )
                                         
-delete_user_form = RegTableForm(fields=[
-                                    widgets.PasswordField(name='password', 
-                                        label=_('Password'),
-                                        validator=ValidPassword()),
-                                        ],
-                                submit=widgets.SubmitButton(attrs=dict(onclick='return confirmDelete();'))
-                                )
-            
+delete_user_form = RegTableForm(fields=[ widgets.TextField(name='user_name', label=_('User Name'), 
+				         validator = validators.All(validators.UnicodeString(not_empty=True,
+                                                                                             max=16, strip=True),
+                                                                    DeleteableUsername(),SimpleSymbols())) ],
+                                submit=widgets.SubmitButton(attrs=dict(onclick='return confirmDelete();')))

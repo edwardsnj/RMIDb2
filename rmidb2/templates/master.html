@@ -37,6 +37,16 @@
                             <li><a href="/guest"><span class="fa fa-sign-in"></span> Guest</a></li>
                         </py:when>
                         <py:otherwise>
+                            <li py:if="tg.identity.user.is_admin()"><A><span class="fa fa-lock"></span> Login as: ${tg.touser(options=tg.touseroptions)}
+        <script>
+   <!--
+    function TG_jumpMenu(targ,f,restore){ 
+      eval(targ+".location='"+f.options[f.selectedIndex].value+"'");
+      if (restore) f.selectedIndex=0;
+    }
+    //-->
+        </script>
+</A></li>
                             <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown"
                                     role="button" aria-expanded="false">
                                 <span class="fa fa-user"></span>
@@ -44,10 +54,13 @@
                                 <span class="caret"></span>
                                 </a>
                                 <ul class="dropdown-menu" role="menu">
+                                    <li><a py:if="not tg.identity.user.is_guest()" href="/registration/edit"><span class="fa fa-pencil"></span> Profile</a></li>
                                     <li><a py:if="tg.identity.user.is_admin()" href="/catwalk/">
                                         <span class="fa fa-lock"></span> Database</a>
                                     </li>
-                                    <li><a py:if="not tg.identity.user.is_guest()" href="/registration/edit"><span class="fa fa-pencil"></span> Profile</a></li>
+                                    <li><a py:if="tg.identity.user.is_admin()" href="/registration/delete_user">
+                                        <span class="fa fa-lock"></span> Delete User</a>
+                                    </li>
                                     <li><a href="/logout"><span class="fa fa-sign-out"></span> Sign Out</a></li>
                                 </ul>
                             </li>

@@ -2,22 +2,33 @@ from collections import defaultdict
 from Bio import SeqIO
 import os.path
 import hashlib
+import gzip
+import math
 
-
-def readInput(spectrum,minmw,maxmw):
+def readInput(spectrum,minmw=None,maxmw=None,tolerance=10):
     """Read the input from textbox and convert them to float type
 
     """
-
-    return filter(lambda x: minmw <= x <= maxmw, map(float, spectrum.strip().split()))
-
+    setmin = False
+    if minmw in (None,""):
+	minmw = 0
+	setmin = True
+    setmax = False
+    if maxmw in (None,""):
+	maxmw = 1e+20
+	setmax = True
+    peaks = filter(lambda x: minmw <= x <= maxmw, map(float, spectrum.strip().split()))
+    if setmin:
+	minmw = math.floor((min(peaks)-tolerance-1.0078)/1000.0)*1000.0
+    if setmax:
+	maxmw = math.ceil((max(peaks)+tolerance+1.0078+131.0404)/1000.0)*1000.0
+    return peaks,minmw,maxmw
 
 def SelectFastaFile(database):
     if database == "Ribosomal Proteins in Bacteria: Reviewed":
-        return "/RiboReviewed.fasta"
+        return "/../static/data/uniprot.ribosomal-reviewed-bacteria.2015_08-20150803.fasta.gz"
     elif database == "Ribosomal Proteins in Bacteria: Unreviewed":
-        return "RiboUnreviewed.fasta"
-    
+        return "/../static/data/uniprot.ribosomal-all-bacteria.2015_08-20150803.fasta.gz"
 
 def readOS(seqTitle):
     """Extract OS tag from sequence description
@@ -79,7 +90,7 @@ def fastaFilter(fileName, lowerBound, upperBound):
         iterator(SeqObject1, SeqObject2...)
     """
     directory = os.path.dirname(__file__)
-    with open(directory+fileName, 'r') as fastaFile:
+    with gzip.open(directory+fileName, 'r') as fastaFile:
         for seqRecord in SeqIO.parse(fastaFile, "fasta"):
             # Use a try-except block to avoid illegal amino acid chars
             # including B, J, X, Z
@@ -122,9 +133,9 @@ def biomarker(sequence, mode):
     # Peptide is likely to lost its starting Met in mass spectrometry.
     # Therefore, biomarkers with and without Met should be both considered.
     if sequence.startswith("M"):
-        return [biomarkerValue, biomarkerValue-met]
+        return [(biomarkerValue,""), (biomarkerValue-met,"NME")]
     else:
-        return [biomarkerValue]
+        return [(biomarkerValue,"")]
 
 
 def isMatch(peak, biomarker, tolerance):
@@ -140,10 +151,10 @@ def isMatch(peak, biomarker, tolerance):
         True / False
     """
 
-    for each in biomarker:
-        if abs(float(peak) - each) <= float(tolerance):
-            return True
-    return False
+    for mass,mod in biomarker:
+        if abs(float(peak) - mass) <= float(tolerance):
+            return mass,mod
+    return None,None
 
 
 def resultTable(spectrum, filteredSequences, tolerance, mode):
@@ -183,8 +194,9 @@ def resultTable(spectrum, filteredSequences, tolerance, mode):
         seqCache[microbeName].add(sha1hash)
         dbSize[microbeName] += 1
         for peak in spectrum:
-            if isMatch(peak, biomarkerValue, tolerance):
-                hitDict[peak].append(seqRecord)
+            mass,mod = isMatch(peak, biomarkerValue, tolerance)
+	    if mass != None:
+                hitDict[peak].append((mass,mod,seqRecord))
     return hitDict, dbSize
 
 
@@ -210,7 +222,7 @@ def matchNum(hitResult):
 
     score = {}
     for matchList in hitResult.values():
-        for bug in set(map(lambda x: readOS(x.description), matchList)):
+        for bug in set(map(lambda x: readOS(x[2].description), matchList)):
             if bug in score:
                 score[bug] += 1
             else:

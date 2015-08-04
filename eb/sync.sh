@@ -1,5 +1,6 @@
 #!/bin/sh
 DIRNAME=`dirname $0`
+DIRNAME=`readlink -f $DIRNAME`
 source $DIRNAME/config.sh                                                                                         
 function asdaemon {
   while true; do
@@ -21,7 +22,7 @@ function asdaemon {
         ln -s devdata.sqlite.$DATE devdata.sqlite
         rm -f `ls -rt server.log.* | head -n -5`
         rm -f `ls -rt devdata.sqlite.* | head -n -5`
-        aws s3 sync --delete ./ s3://$S3BUCKET/state/$NAME
+        aws s3 sync --delete ./ $S3BUCKET/$NAME
       fi
     fi
     sleep 300

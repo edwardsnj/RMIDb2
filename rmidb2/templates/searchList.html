@@ -61,6 +61,7 @@
         <thead>
             <tr>
                 <th><A href="${tg.paginate.get_href(1,order='title')}">Title</A></th>
+                <th py:if="tg.identity.user.is_admin()"><A href="${tg.paginate.get_href(1,order='user.user_name')}">User</A></th>
                 <th><A href="${tg.paginate.get_href(1,order='created')}">Submitted</A></th>
                 <th><A href="${tg.paginate.get_href(1,order='status')}">Status</A></th>
                 <th></th>
@@ -70,6 +71,7 @@
             <tr py:for="each in searchData">
                 <td py:if="each.status == 'Done'"><a href="${tg.url('/searchresult', dict(searchID=each.id))}">${each.title}</a></td>
                 <td py:if="each.status != 'Done'">${each.title}</td>
+                <td py:if="tg.identity.user.is_admin()">${each.user.user_name}</td>
                 <td>${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
                 <td id="${each.status}">${each.status} <span py:if="each.status == 'Queued'">(${ordinal[each.id]+1})</span></td>
                 <!--

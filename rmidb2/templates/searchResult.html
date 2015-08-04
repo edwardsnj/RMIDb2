@@ -13,6 +13,7 @@
 <body>
     <div class="page-header">
         <ul class="nav nav-pills pull-right">
+            <li role="presentation"><a href="${tg.url('/search',dict(title=search.title, query=search.query, maxMass=search.max_mass,minMass=search.min_mass, massTolerance=search.mass_tolerance, specMode=search.spec_mode, database=search.database))}">Re-Search</a></li>
             <li role="presentation"><a href="/searchlist">Back to Search List</a></li>
         </ul>
         <h2>Search Result: ${search.title}</h2>

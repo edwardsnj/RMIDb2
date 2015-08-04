@@ -11,8 +11,8 @@ os.environ['PYTHON_EGG_CACHE'] = '/opt/python/current/app/python-eggs'
 
 from rmidb2 import command, model
 app = command.start()
-model.bootstrap_model()
-model.create_default_users()
+# model.bootstrap_model()
+# model.create_default_users()
 
 import cherrypy._cpwsgi
 application = cherrypy._cpwsgi.CPWSGIApp(app)

@@ -39,6 +39,16 @@ class not_guest(Predicate, IdentityPredicateHelper):
             return False
         return True
 
+class is_admin(Predicate, IdentityPredicateHelper):
+    """Predicate for checking whether current visitor is using the admin account."""
+    error_message = "Admin access required"
+
+    def eval_with_object(self, identity, errors=None):
+        if 'admin' not in identity.groups:
+            self.append_error_message(errors)
+            return False
+        return True
+
 class UserRegistration(controllers.Controller):
 
     def __init__(self):
@@ -250,15 +260,6 @@ class UserRegistration(controllers.Controller):
     @expose()
     @identity.require(identity.All(identity.not_anonymous(),
                                    not_guest()))
-    def newapikey(self):
-        user = identity.current.user
-        user.set_apikey()
-        turbogears.flash(_("API Key changed."))
-        redirect('edit')
-    
-    @expose()
-    @identity.require(identity.All(identity.not_anonymous(),
-                                   not_guest()))
     @validate(form=edit_user_form)
     @error_handler(edit)                
     def update_user(self, email, display_name, old_password, password1, password2, user_name=None):
@@ -330,11 +331,10 @@ class UserRegistration(controllers.Controller):
                     admin_email=admin_email)
     
     @expose(template='rmidb2.templates.registration.delete_user')
-    @identity.require(identity.All(identity.not_anonymous(),
-                                   not_guest()))
+    @identity.require(is_admin())
     def delete_user(self):
         "Remove a user from the application."
-        confirm_msg = _("This account will be immediately and permanently\\n"
+        confirm_msg = _("The account will be immediately and permanently\\n"
                         "deleted.\\n\\nAre you sure you wish to continue?")
         return dict(form=delete_user_form, 
                     confirm_msg=confirm_msg, 
@@ -342,20 +342,18 @@ class UserRegistration(controllers.Controller):
                     action='do_delete')
     
     @expose()
-    @identity.require(identity.All(identity.not_anonymous(),
-                                   not_guest()))
+    @identity.require(is_admin())
     @validate(form=delete_user_form)
     @error_handler(delete_user)                
-    def do_delete(self, password):
+    def do_delete(self, user_name):
         "Do the work of deleting a user."
         # The form does the password validation; so we know the user has already
         # given us a valid password.  All that is left to do is delete the user.
         # If you have other cleanup or logging items that need to be done when 
         # a user is deleted, this is the place to do them. 
-        user = identity.current.user
-        identity.current.logout()
+	user = register_model.User.by_user_name(user_name)
         delete(user)
-        turbogears.flash(_('Your account has been deleted.'))
+	user.destroySelf()
         redirect('/')
         
     def add_standard_groups(self, user):

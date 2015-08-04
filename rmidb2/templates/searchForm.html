@@ -25,10 +25,22 @@
         </div>
         <div class="col-md-6">
             <div class="panel panel-default pull-right">
-                <div class="panel-heading">Recent Searches</div>
-                <table class="table table-hover table-condensed">
+                <div py:if="len(searchHistory) > 0" class="panel-heading">Recent Searches</div>
+                <table py:if="len(searchHistory) > 0" class="table table-hover table-condensed">
                     <tbody>
                         <tr py:for="each in searchHistory">
+                            <td>
+                                <a href="${tg.url('/search', dict(title=each.title, query=each.query, maxMass=each.max_mass,minMass=each.min_mass, massTolerance=each.mass_tolerance, specMode=each.spec_mode, database=each.database))}">
+                                        ${each.title}</a>
+                            </td>
+                            <td>${each.created.strftime("%m/%d/%Y %I:%M %p")}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div py:if="len(examples) > 0" class="panel-heading">Examples</div>
+                <table py:if="len(examples) > 0" class="table table-hover table-condensed">
+                    <tbody>
+                        <tr py:for="each in examples">
                             <td>
                                 <a href="${tg.url('/search', dict(title=each.title, query=each.query, maxMass=each.max_mass,minMass=each.min_mass, massTolerance=each.mass_tolerance, specMode=each.spec_mode, database=each.database))}">
                                         ${each.title}</a>

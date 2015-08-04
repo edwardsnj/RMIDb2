@@ -23,6 +23,7 @@
             <tr>
                 <th><A href="${tg.paginate.get_href(1,order='peak')}">Peak</A></th>
 		<th><A href="${tg.paginate.get_href(1,order='delta')}">Delta</A></th>
+		<th><A href="${tg.paginate.get_href(1,order='mods')}">Modification</A></th>
                 <th><A href="${tg.paginate.get_href(1,order='biomarker.accession')}">Accession</A></th>
                 <th><A href="${tg.paginate.get_href(1,order='biomarker.gene')}">Gene</A></th>
                 <th><A href="${tg.paginate.get_href(1,order='biomarker.description')}">Description</A></th>
@@ -30,10 +31,11 @@
         </thead>
         <tbody py:for="item in matchData">
             <tr>
-                <td width="30px" align="right">${item.peak}</td>
-                <td width="20px" align="right">${"%+.3f"%item.delta}</td>
-                <td><A href="${'http://uniprot.org/uniprot/%s'%item.biomarker.accession}">${item.biomarker.accession}</A></td>
-                <td>${item.biomarker.gene}</td>
+                <td width="80px" align="right">${item.peak}</td>
+                <td width="80px" align="right">${"%+.3f"%item.delta}</td>
+                <td width="80px">${item.mods}</td>
+                <td width="80px"><A href="${'http://uniprot.org/uniprot/%s'%item.biomarker.accession}">${item.biomarker.accession}</A></td>
+                <td width="80px">${item.biomarker.gene}</td>
                 <td>${item.biomarker.description}</td>
             </tr>
         </tbody>

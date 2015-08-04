@@ -12,17 +12,81 @@ import os.path
 
 # third-party imports
 from cherrypy import request
-from sqlobject import SQLObjectNotFound, AND
-from turbogears import controllers, expose, identity, redirect, visit, paginate
-from turbogears import widgets, error_handler, validators, validate
+from sqlobject import SQLObjectNotFound, AND, IN
+import turbogears as tg
+from turbogears import controllers, expose, identity, redirect, visit, paginate, view
+from turbogears import widgets, error_handler, validators, validate, scheduler
 from turbogears.toolbox.catwalk import CatWalk
-import threading, datetime
+import threading, datetime, sys
 
 # project specific imports
 from registration import controllers as reg_controllers
-from rmidb2.model import VisitIdentity
+from rmidb2.model import VisitIdentity, Visit, User
 from async import *
 
+# periodic tasks, hopefully compatible with wsgi...
+
+cleanup_visit_lock = threading.Lock()
+def cleanup_visit():
+    if not cleanup_visit_lock.acquire(False):
+        return
+    try:
+        connection = hub.begin()
+        Visit.expunge(max=100,connection=connection)
+        hub.commit()
+    except Exception, e:
+        print >>sys.stderr, e
+        raise
+    finally:
+        cleanup_visit_lock.release()
+
+scheduler.add_interval_task(action=cleanup_visit,
+                            initialdelay=120,
+                            interval=120)
+
+cleanup_lock = threading.Lock()
+def cleanup():
+    if not cleanup_lock.acquire(False):
+        return
+    try:
+        connection = hub.begin()
+        for sl in model.SearchList.selectBy(status=model.DELETED,connection=connection):
+	    sl.destroySelf()
+        hub.commit()
+    except Exception, e:
+        print >>sys.stderr, e
+        raise
+    finally:
+        cleanup_lock.release()
+
+scheduler.add_interval_task(action=cleanup,
+                            initialdelay=120,
+                            interval=120)
+
+# To permit the admin user to "switch" to other users
+
+from turbogears.identity.conditions import Predicate, IdentityPredicateHelper
+class is_admin(Predicate, IdentityPredicateHelper):
+    """Predicate for checking whether current visitor is using the admin account."""
+    error_message = "Admin access required"
+
+    def eval_with_object(self, identity, errors=None):
+        if 'admin' not in identity.groups:
+            self.append_error_message(errors)
+            return False
+        return True
+
+def touseroptions():
+    return [ ("",' -- Select --') ] + \
+                sorted([ (tg.url("/loginas/%s"%u.user_name),
+                          u.user_name) for u in User.select()
+                          if u.user_name not in ('admin','guest')],key=lambda s: s[1].lower())
+touser = widgets.JumpMenu('userjumpmenu',options=[("","")])
+
+def add_custom_stdvars(vars):
+    return vars.update({"touser": touser, "touseroptions": touseroptions})
+
+view.variable_providers.append(add_custom_stdvars)
 
 # logging in after successfully registering a new user
 def login_user(user):
@@ -40,6 +104,7 @@ def login_user(user):
 
     user_identity = identity.current_provider.load_identity(visit_key)
     identity.set_current_identity(user_identity)
+    identity.current.user.last_login = datetime.now()
 
 
 # Customer Classes
@@ -72,8 +137,8 @@ class RegistrationFieldsSchema(validators.Schema):
 class SearchFields(widgets.WidgetsList):
     title = widgets.TextField(label="Title:",attrs=dict(style="width: 100%;"))
     query = widgets.TextArea(label="Peaks:",attrs=dict(style="width: 100%;"))
-    minMass = widgets.TextField(label="Min. Mol. Weight:",default=4000.0,attrs=dict(style="width:100%;"))
-    maxMass = widgets.TextField(label="Max. Mol. Weight:",default=15000.0,attrs=dict(style="width:100%;"),css_classes=['aside'])
+    minMass = widgets.TextField(label="Min. Mol. Weight:",default="",attrs=dict(style="width:100%;"))
+    maxMass = widgets.TextField(label="Max. Mol. Weight:",default="",attrs=dict(style="width:100%;"))
     massTolerance = widgets.TextField(label="Mass Tolerance (Da):",default=3.0,attrs=dict(style="width:100%;"))
     specMode = widgets.SingleSelectField(label="Ionization Mode:", options=["Positive", "Negative"],
                                          default="Positive",attrs=dict(style="width: 100%;"))
@@ -98,13 +163,27 @@ class OneOrMoreNumbers(validators.FancyValidator):
             raise validators.Invalid(self.message('notNumbers', state), value, state)
         return value
 
+class OnePositiveNumber(validators.FancyValidator):
+    messages = {'notNumbers': 'Please enter a positive number.'}
+
+    def _to_python(self, value, state):
+        try:
+            n = float(value.strip())
+            if not n > 0:
+                raise validators.Invalid(self.message('notNumbers', state), value, state)
+            elif not n < 1e+20:
+                raise validators.Invalid(self.message('notNumbers', state), value, state)
+        except ValueError:
+            raise validators.Invalid(self.message('notNumbers', state), value, state)
+        return value
+
 class SearchFieldsSchema(validators.Schema):
     title = validators.UnicodeString(not_empty=True, strip=True)
     query = validators.All(validators.UnicodeString(not_empty=True, strip=True),
 		           OneOrMoreNumbers())
-    maxMass = validators.Number(not_empty=True, strip=True)
-    minMass = validators.Number(not_empty=True, strip=True)
-    massTolerance = validators.Number(not_empty=True, strip=True)
+    maxMass = validators.All(validators.Number(strip=True),OnePositiveNumber())
+    minMass = validators.All(validators.Number(strip=True),OnePositiveNumber())
+    massTolerance = validators.All(validators.Number(not_empty=True, strip=True),OnePositiveNumber())
     specMode = validators.OneOf(["Positive", "Negative"])
     database = validators.OneOf(["Ribosomal Proteins in Bacteria: Unreviewed",
                                  "Ribosomal Proteins in Bacteria: Reviewed"])
@@ -184,7 +263,7 @@ class Root(controllers.RootController):
                 msg = _(u"Cannot log in because your browser "
                          "does not support session cookies.")
             else:
-                if not identity.in_group("validated"):
+                if identity.in_group("unvalidated"):
                     msg = _(u"The credentials you suppplied have not been "
                              "verified. Please verify using the URL in "
                              "your New User Registration email.")
@@ -214,47 +293,61 @@ class Root(controllers.RootController):
         identity.current.logout()
         redirect('/')
 
-    @expose('rmidb2.templates.signupForm')
-    def signup(self):
-        siteTitle = "RMIDb: Register"
-        return dict(siteTitle=siteTitle, form=registrationForm)
+    # @expose('rmidb2.templates.signupForm')
+    # def signup(self):
+    #     siteTitle = "RMIDb: Register"
+    #     return dict(siteTitle=siteTitle, form=registrationForm)
+
+    # @expose()
+    # @validate(form=registrationForm)
+    # @error_handler(signup)
+    # def signupsubmit(self, **kw):
+    #     # Create a user
+    #	try:
+    #        u = model.User(user_name=kw['userName'], password=kw['password'], 
+    #	                   display_name=kw['displayName'])
+    #	except DuplicateEntryError:
+    #	    raise 
+    #    login_user(u)
+    #    redirect('/')
 
     @expose()
-    @validate(form=registrationForm)
-    @error_handler(signup)
-    def signupsubmit(self, **kw):
-        # Create a user
+    @identity.require(identity.All(identity.not_anonymous(),
+                                   is_admin()))
+    def loginas(self,user):
+	identity.current.logout()
 	try:
-            u = model.User(user_name=kw['userName'], password=kw['password'], 
-	                   display_name=kw['displayName'])
-	except DuplicateEntryError:
-	    raise 
-        login_user(u)
-        redirect('/')
+	    u = User.by_user_name(user)
+	    login_user(u)
+	except:
+	    raise
+	redirect('/')
 
     @expose()
     def guest(self):
 	u = model.User.by_user_name('guest')
 	login_user(u)
-	identity.current.user.last_login = datetime.now()
 	redirect('/')
 
-    @expose('rmidb2.templates.signupConfirmation')
-    def signupconfirmation(self):
-        siteTitle = "RMIDb: Welcome"
-        return dict(siteTitle=siteTitle)
+    # @expose('rmidb2.templates.signupConfirmation')
+    # def signupconfirmation(self):
+    #     siteTitle = "RMIDb: Welcome"
+    #     return dict(siteTitle=siteTitle)
 
     @expose('rmidb2.templates.searchForm')
     @identity.require(identity.not_anonymous())
     def search(self, **kw):
         siteTitle = "RMIDb: New Search"
         user = identity.current.user
-        if user.is_admin():
-            user = model.User.by_user_name('guest')
+        admin = model.User.by_user_name('admin')
         previousSearches = model.SearchList.select(AND(model.SearchList.q.status != model.DELETED,
                                                        model.SearchList.q.user == user),
 						   orderBy='-created')[:5]
-        return dict(siteTitle=siteTitle, form=engineForm, values=kw, searchHistory=previousSearches)
+        exampleSearches = model.SearchList.select(AND(model.SearchList.q.status != model.DELETED,
+                                                       model.SearchList.q.user == admin),
+						   orderBy='-created')
+        return dict(siteTitle=siteTitle, form=engineForm, values=kw, 
+		    searchHistory=list(previousSearches), examples=list(exampleSearches))
 
     @expose()
     @identity.require(identity.not_anonymous())
@@ -262,8 +355,6 @@ class Root(controllers.RootController):
     @error_handler(search)
     def searchsubmit(self, **kw):
         user = identity.current.user
-        if user.is_admin():
-            user = model.User.by_user_name('guest')
         model.SearchList(title=kw['title'], min_mass=kw['minMass'], max_mass=kw['maxMass'],
                          query=kw['query'], mass_tolerance=kw['massTolerance'], spec_mode=kw['specMode'],
                          database=kw['database'], user=user)
@@ -279,11 +370,11 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     @paginate('searchData', default_order="-created")
     def searchlist(self):
-        user = identity.current.user
-        if user.is_admin():
-            user = model.User.by_user_name('guest')
+        users = [identity.current.user]
+        if identity.current.user.is_admin():
+            users.append(model.User.by_user_name('guest'))
         userSearch = model.SearchList.select(AND(model.SearchList.q.status != model.DELETED,
-						 model.SearchList.q.user == user))
+						 IN(model.SearchList.q.user,users)))
         ordinal = dict(map(lambda t: (t[1].id,t[0]),enumerate(model.SearchList.select(model.SearchList.q.status == model.QUEUED,orderBy='id'))))
         siteTitle = "RMIDb: Search List"
         return dict(siteTitle=siteTitle, searchData=userSearch,ordinal=ordinal)
